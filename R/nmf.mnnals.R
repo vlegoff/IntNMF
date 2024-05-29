@@ -103,31 +103,38 @@ for (j in 1:n.ini)
 		names(H.list) <- paste("H",1:n.dat,".list",sep="")
 
 		if(j>1){
-		if (min(min.f.WH[-j]) < min.f.WH[j]){
-			W.list[-which.min(min.f.WH)] <- "Not an Optimum Solution"
-			for (i in 1:n.dat) H.list[[i]][-which.min(min.f.WH)] <- "Not an Optimum Solution"
-			convergence.list[-which.min(min.f.WH)] <- "Not an Optimum Solution"
-			consensus.list[-which.min(min.f.WH)] <- "Not an Optimum Solution"
+		if (min(min.f.WH[-j]) <= min.f.WH[j]){
+			W.list[j] <- "Not an Optimum Solution"
+			for (i in 1:n.dat) H.list[[i]][j] <- "Not an Optimum Solution"
+			convergence.list[j] <- "Not an Optimum Solution"
+			consensus.list[j] <- "Not an Optimum Solution"
 		} else {
-			W.list[-j] <- "Not an Optimum Solution"
-			for (i in 1:n.dat) H.list[[i]][-j] <- "Not an Optimum Solution"
-			convergence.list[-j] <- "Not an Optimum Solution"
-			consensus.list[-j] <- "Not an Optimum Solution"}}
+                        prevmin = which(W.list[-j] != "Not an Optimum Solution")
+			W.list[prevmin] <- "Not an Optimum Solution"
+			for (i in 1:n.dat) H.list[[i]][prevmin] <- "Not an Optimum Solution"
+			convergence.list[prevmin] <- "Not an Optimum Solution"
+			consensus.list[prevmin] <- "Not an Optimum Solution"}}
 		}
 	# Select the factorization (W and H) that leads to the lowest objective function 'f.WH'
-	W <- W.list[[which.min(min.f.WH)]]
+        selected = which.min(min.f.WH)
+        # safeguard in case everything goes wrong
+        if(W.list[selected]=="Not an Optimum Solution") {
+            warning("min criterion is not an optimum solution")
+            selected = which(W.list!="Not an Optimum Solution")[1]
+        }
+	W <- W.list[[selected]]
 	H <- NULL
 	if(n.dat > 1){
 		for (i in 1:n.dat){
-			assign(paste("H",i,sep=""),H.list[[i]][[which.min(min.f.WH)]])
+			assign(paste("H",i,sep=""),H.list[[i]][[selected]])
 			H <- c(H,list(eval(parse(text=paste("H",i,sep="")))))}
 		names(H) <- paste("H",1:n.dat,sep="")
 	} else {
-		assign("H",H.list[[i]][[which.min(min.f.WH)]])
+		assign("H",H.list[[i]][[selected]])
 		names(H) <- "H"}
-	consensus <- consensus.list[[which.min(min.f.WH)]]
+	consensus <- consensus.list[[selected]]
 	dimnames(consensus) <- list(rownames(W),rownames(W))
-	convergence <- convergence.list[[which.min(min.f.WH)]]
+	convergence <- convergence.list[[selected]]
 	# Compute cluster membership
 	clusters <- apply(W,1,which.max)
 	# Output the following results
